@@ -7,20 +7,13 @@ import re
 import pprint
 import urlparse
 import urlresolver
+import showEpisode
 
 thisPlugin = int(sys.argv[1])
 baseLink = "http://cbtv.circuit-board.de/"
 
 _regex_extractShows = re.compile("<li class=\"page_item page-item-.*?\"><a href=\"("+baseLink+"\?page_id=.*?)\" title=\".*?\"><img src=\"("+baseLink+"wp-content/uploads/icons/.*?)\" class=\"page_icon\" alt=\".*?\">(.*?)</a></li>");
 _regex_extractEpisodes = re.compile("<li><span class=\"class1\"><a href=\"("+baseLink+"\?p=.*?)\">(.*?)</a></span></li>")
-_regex_extractEpisodeYouTubeId = re.compile("http://www.youtube.com/(embed|v)/(.*?)(\"|\?)")
-_regex_extractEpisodeBlipTv = re.compile("(http://blip.tv/play/.*?)(.html|\")");
-_regex_extractEpisodeDaylimotion = re.compile("(http://www.dailymotion.com/video/.*?)_");
-_regex_extractEpisodeDescription = re.compile("<div class=\"post\">.*?<div class=\"container-header-light-normal\"><span></span></div>.*?<div class=\"copy clearfix\">(.*?)</div>.*?<div class=\"container-footer-light-normal\"><span></span></div>.*?</div>",re.DOTALL)
-
-#blip.tv
-_regex_extractVideoFeedURL = re.compile("file=(.*?)&", re.DOTALL);
-_regex_extractVideoFeedURL2 = re.compile("file=(.*)", re.DOTALL);
 
 def mainPage():
     page = load_page(baseLink)
@@ -42,55 +35,9 @@ def showPage(link):
         addDirectoryItem(episode_title, {"action" : "episode", "link": episode_link}, None, False)
     xbmcplugin.endOfDirectory(thisPlugin)
     
-def showEpisode(link):
+def playEpisode(link):
     episode_page = load_page(urllib.unquote(link))
-    episodeDescription = _regex_extractEpisodeDescription.search(episode_page).group(1)
-
-    videoItem = _regex_extractEpisodeYouTubeId.search(episode_page)
-    if videoItem is not None:
-        youTubeId = videoItem.group(2)
-        showEpisodeYoutube(youTubeId)
-    else:
-        videoItem = _regex_extractEpisodeBlipTv.search(episode_page)
-        if videoItem is not None:
-            videoLink = videoItem.group(1)
-            showEpisodeBip(videoLink)
-        else:
-            videoItem = _regex_extractEpisodeDaylimotion.search(episode_page)
-            if videoItem is not None:
-                videoLink = videoItem.group(1)
-                showEpisodeDaylimotion(videoLink)
-            else:#Fehler
-                videoLink = videoItem.group(1)
-
-def showEpisodeBip(url):    
-    #GET the 301 redirect URL
-    req = urllib2.Request(url)
-    response = urllib2.urlopen(req)
-    fullURL = response.geturl()
-    
-    feedURL = _regex_extractVideoFeedURL.search(fullURL)
-    if feedURL is None:
-        feedURL = _regex_extractVideoFeedURL2.search(fullURL)
-    feedURL = urllib.unquote(feedURL.group(1))
-    
-    blipId = feedURL[feedURL.rfind("/")+1:]
-    
-    stream_url = "plugin://plugin.video.bliptv/?action=play_video&videoid=" + blipId
-    item = xbmcgui.ListItem(path=stream_url)
-    return xbmcplugin.setResolvedUrl(thisPlugin, True, item)
-
-def showEpisodeYoutube(youtubeID):
-    stream_url = "plugin://plugin.video.youtube/?action=play_video&videoid=" + youtubeID
-    item = xbmcgui.ListItem(path=stream_url)
-    xbmcplugin.setResolvedUrl(thisPlugin, True, item)
-    return False
-                    
-def showEpisodeDaylimotion(url):
-    stream_url = urlresolver.resolve(url)
-    item = xbmcgui.ListItem(path=stream_url)
-    xbmcplugin.setResolvedUrl(thisPlugin, True, item)
-    return False
+    showEpisode.showEpisode(episode_page)
 
 def load_page(url):
     print url
@@ -141,6 +88,6 @@ else:
     if params['action'] == "show":
         showPage(params['link'])
     elif params['action'] == "episode":
-        showEpisode(params['link'])
+        playEpisode(params['link'])
     else:
         mainPage()
