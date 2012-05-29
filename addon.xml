@@ -11,8 +11,10 @@
     <provides>video</provides>
   </extension>
   <extension point="xbmc.addon.metadata">
-    	<summary lang="en">circuit-board.de</summary>
-    	<description lang="en"></description>
+  		<language>DE</language>
+    	<summary>circuit-board.de</summary>
+    	<description>Circuit Board TV: 15 Minutes of Game, Der Retro Brettspiel-Check, Floppy Fans, Kraut &amp; Rüben, Longplays, PIXELKITSCH, PixelSpieler, Retro Snippets, Sprites, Shapes &amp; Co
+    	</description>
     <platform>all</platform>
   </extension>
 </addon>
