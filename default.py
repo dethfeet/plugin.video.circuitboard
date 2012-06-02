@@ -6,17 +6,21 @@ import urllib, urllib2
 import re
 import pprint
 import urlparse
-import urlresolver
 import showEpisode
 
 thisPlugin = int(sys.argv[1])
 baseLink = "http://cbtv.circuit-board.de/"
+newEpisodes = "http://cbtv.circuit-board.de/?feed=rss"
 
 _regex_extractShows = re.compile("<li class=\"page_item page-item-.*?\"><a href=\"("+baseLink+"\?page_id=.*?)\" title=\".*?\"><img src=\"("+baseLink+"wp-content/uploads/icons/.*?)\" class=\"page_icon\" alt=\".*?\">(.*?)</a></li>");
 _regex_extractEpisodes = re.compile("<li><span class=\"class1\"><a href=\"("+baseLink+"\?p=.*?)\">(.*?)</a></span></li>")
+_regex_extractNew = re.compile("<item>[ \r\n\t]*<title>(.*?)</title>[ \r\n\t]*<description><!\[CDATA\[(.*?)\]\]></description>[ \r\n\t]*<link>("+baseLink+"\?p=[0-9]*)</link>[ \r\n\t]*</item>")
 
 def mainPage():
     page = load_page(baseLink)
+    
+    addDirectoryItem("Neuste Folgen", {"action" : "new", "link": newEpisodes})
+    
     
     for show in _regex_extractShows.finditer(page):
         menu_link = show.group(1)
@@ -31,6 +35,17 @@ def showPage(link):
     for episode in _regex_extractEpisodes.finditer(page):
         episode_link = episode.group(1)
         episode_title = remove_html_special_chars(episode.group(2))
+        
+        addDirectoryItem(episode_title, {"action" : "episode", "link": episode_link}, None, False)
+    xbmcplugin.endOfDirectory(thisPlugin)
+    
+
+def showNew(link):
+    page = load_page(urllib.unquote(link))
+    
+    for episode in _regex_extractNew.finditer(page):
+        episode_link = episode.group(3)
+        episode_title = remove_html_special_chars(episode.group(1))
         
         addDirectoryItem(episode_title, {"action" : "episode", "link": episode_link}, None, False)
     xbmcplugin.endOfDirectory(thisPlugin)
@@ -57,6 +72,8 @@ def addDirectoryItem(name, parameters={}, pic="", folder=True):
 def remove_html_special_chars(input):
     input = input.replace("&#8211;","-")
     input = input.replace("&#8217;","'")#\x92
+    input = input.replace("&#8220;","\"")#\x92
+    input = input.replace("&#8221;","\"")#\x92
     input = input.replace("&#039;",chr(39))# '
     input = input.replace("&#038;",chr(38))# &
     input = input.replace("&amp;",chr(38))# &
@@ -87,6 +104,8 @@ else:
     params=get_params()
     if params['action'] == "show":
         showPage(params['link'])
+    if params['action'] == "new":
+        showNew(params['link'])
     elif params['action'] == "episode":
         playEpisode(params['link'])
     else:
