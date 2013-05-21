@@ -9,6 +9,8 @@ import urlparse
 import showEpisode
 
 thisPlugin = int(sys.argv[1])
+addon = xbmcaddon.Addon(id='plugin.video.circuitboard')
+
 baseLink = "http://cbtv.circuit-board.de/"
 newEpisodes = "http://cbtv.circuit-board.de/?feed=rss"
 
@@ -19,7 +21,7 @@ _regex_extractNew = re.compile("<item>[ \r\n\t]*<title>(.*?)</title>[ \r\n\t]*<l
 def mainPage():
     page = load_page(baseLink)
     
-    addDirectoryItem("Neuste Folgen", {"action" : "new", "link": newEpisodes})
+    addDirectoryItem(addon.getLocalizedString(30000), {"action" : "new", "link": newEpisodes})
     
     
     for show in _regex_extractShows.finditer(page):
